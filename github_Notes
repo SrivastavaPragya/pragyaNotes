@@ -1,0 +1,328 @@
+GitHub notes
+
+
+1)To commit on GitHub
+
+git commit -m “commit message ”
+————————————————————————————————————————————————————————————————————————————————
+
+2. To create a new branch
+
+
+git checkout -b [yourbranchname]
+
+To switch to this branch
+
+git checkout [branch Name]
+
+
+
+————————————————————————————————————————————————————————————————————————————————
+
+3.Merging Two branches
+
+
+The first method to combine work that we will examine is git merge. Merging in Git creates a special commit that has two unique parents. A commit with two parents essentially means "I want to include all the work from this parent over here and this one over here, and the set of all their parents."
+It's easier with visuals, let's check it out in the next view.
+
+
+
+
+To complete this level, do the following steps:
+* Make a new branch called bugFix
+* Checkout the bugFix branch with git checkout bugFix
+* Commit once
+* Go back to main with git checkout
+* Commit another time
+* Merge the branch bugFix into main with git merge———> means u will have to be in main branch and then run the command —>git merge bugFix
+Remember, you can always re-display this dialog with "objective"!
+——————————————————————————————————————————————————————————————————————————————————————————————
+
+Git Rebase
+The second way of combining work between branches is rebasing. Rebasing essentially takes a set of commits, "copies" them, and plops them down somewhere else.
+While this sounds confusing, the advantage of rebasing is that it can be used to make a nice linear sequence of commits. The commit log / history of the repository will be a lot cleaner if only rebasing is allowed.
+
+
+
+
+To complete this level, do the following
+* Checkout a new branch named bugFix
+* Commit once
+* Go back to main and commit again
+* Check out bugFix again and rebase onto main———>git rebase main
+
+Situation	Prefer
+Shared/public branch	merge
+Main/production branch	Usually merge
+Your own local feature branch	rebase can be great
+Want clean linear history	rebase
+Don't want to rewrite history	merge
+Team already working on your branch	Usually merge
+——————————————————————————————————————————————————————————————————————————————————————————————
+HEAD
+
+
+To complete this level, let's detach HEAD from bugFix and attach it to the commit instead.
+Specify this commit by its hash. The hash for each commit is displayed on the circle that represents the commit.
+
+git checkout bugFix^——>by using ref
+
+HEAD normally current branch ko point karta hai, aur current branch latest commit ko point karti hai.
+So technically chain hoti hai:
+
+HEAD → branch → commit
+
+
+Aur jab detached ho:
+
+A --- B --- C
+      ↑
+     HEAD
+
+main ───────→ C
+Ab HEAD branch ko point nahi karta, directly commit ko point karta hai.
+
+
+
+
+
+
+
+
+
+Bas ek important correction hai:
+HEAD hamesha branch ko target nahi karta. Normal state mein HEAD → branch → commit hota hai. But detached HEAD mein HEAD → commit directly hota hai.
+Normal situation
+
+A → B → C
+        ↑
+      bugFix
+        ↑
+       HEAD
+
+Yahan:
+
+git checkout HEAD^
+
+aur
+
+git checkout bugFix^
+
+same commit par le jayenge, because:
+
+HEAD → bugFix → C
+
+So:
+
+HEAD^    = C ka parent = B
+bugFix^  = C ka parent = B
+
+✅ Same.
+
+But yahan difference aa jata hai 👇
+Suppose:
+
+A → B → C
+        ↑
+      bugFix
+
+A → B → C → D
+            ↑
+           main
+            ↑
+           HEAD
+
+Ab:
+
+HEAD → main → D
+bugFix → C
+
+Therefore:
+
+git checkout HEAD^
+
+➡️ D ka parent = C
+while:
+
+git checkout bugFix^
+
+➡️ C ka parent = B
+So:
+
+HEAD^     → C
+bugFix^   → B
+
+And detached HEAD ke baad aur clear ho jayega
+
+A → B → C
+        ↑
+      bugFix
+
+       HEAD
+        ↓
+        B
+
+Ab HEAD branch ko point nahi kar raha.
+If you do:
+
+git checkout HEAD^
+
+➡️ A
+But:
+
+git checkout bugFix^
+
+➡️ B
+Because HEAD aur bugFix alag commits par hain.
+——————————————————————————————————————————————————————————————————————————————————————————————
+
+
+Essential commands
+
+Viewing History
+To see the commit history:
+git log
+
+For a shorter, cleaner view:
+git log --oneline
+
+
+Command	Description
+git init	Create a repository
+git clone	Clone a repository
+git add	Stage changes
+git commit	Save changes
+git log	View commit history
+git status	Check repository status
+———————————————————————————————————————————————————————————————————————————————————————————
+Viewing Changes
+See Unstaged Changes
+git diff
+
+Shows what you've changed but haven't staged yet.
+See Staged Changes
+git diff --staged
+
+Shows what will go into your next commit.
+
+
+
+———————————————————————————————————————————————————————————————————————————————————————————
+
+
+2. Unstage Files
+To remove files from staging area but keep changes:
+git restore --staged file.txt
+
+———————————————————————————————————————————————————————————————————————————————————————————
+
+4. Reset to a Previous Commit
+Soft Reset (keeps changes in staging):
+git reset --soft HEAD~1
+
+Mixed Reset (keeps changes in working directory):
+git reset HEAD~1
+
+Hard Reset (discards all changes):
+git reset --hard HEAD~1
+
+
+
+
+———————————————————————————————————————————————————————————————————————————————————————————
+
+View Current Branch
+git branch
+
+The asterisk (*) shows your current branch:
+* main
+  feature-login
+  bugfix-header
+View All Branches (Including Remote)
+git branch -a
+
+
+
+
+
+———————————————————————————————————————————————————————————————————————————————————————————
+
+Creating and Switching Branches
+Create a New Branch
+git branch feature-navbar
+
+Switch to a Branch
+git checkout feature-navbar
+
+Or with the newer command:
+git switch feature-navbar
+
+Create and Switch in One Command
+git checkout -b feature-navbar
+
+Or:
+git switch -c feature-navbar
+
+
+—————————————————————————————————————————————————————————————————————————————————————
+Merging two branch
+# 1. Create hotfix from main
+git checkout main
+git checkout -b hotfix-security
+
+# 2. Fix the issue
+# ... make changes ...
+git commit -m "Fix security vulnerability"
+
+# 3. Merge to main
+git checkout main
+git merge hotfix-security
+
+# 4. Also merge to develop if exists
+git checkout develop
+git merge hotfix-security
+
+
+—————————————————————————————————————————————————————————————————————————————————————
+Command	Description
+git branch	List branches
+git branch [name]	Create branch
+git checkout [branch]	Switch branch
+git checkout -b [branch]	Create and switch
+git switch [branch]	Switch branch (newer)
+git switch -c [branch]	Create and switch (newer)
+git merge [branch]	Merge branch into current
+git branch -d [branch]	Delete branch
+git branch -m [new-name]	Rename branch
+git log --graph --oneline --all	Visualize branches
+——————————————————————————————————————————————————————————————————————————————————————————
+Git stash 
+
+
+
+Common Use Cases
+Switch Branches Quickly
+# Working on feature, need to fix bug on main
+git stash
+git checkout main
+# Fix bug...
+git checkout feature-branch
+git stash pop
+
+Pull Without Committing
+git stash
+git pull
+git stash pop
+
+
+
+Command	Description
+git stash	Save changes to stash
+git stash list	List all stashes
+git stash apply	Apply stash without removing
+git stash pop	Apply and remove stash
+git stash drop	Delete a stash
+git stash show	View stash contents
+git stash clear	Remove all stashes
+git stash branch [name]	Create branch from stash
+
