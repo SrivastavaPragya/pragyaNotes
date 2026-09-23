@@ -1,0 +1,239 @@
+
+Notes for  fastapi:
+
+Do you need to install SQLite to use in fastApi?
+❌ No.
+Python already comes with the sqlite3 module.
+
+————————————————————————————————————————————————————————————————————
+Do you need a SQLite driver?
+❌ No separate installation for normal Python + SQLAlchemy use.
+Python has:
+
+sqlite3
+
+built in.
+SQLAlchemy uses that driver automatically when you use:
+
+DATABASE_URL = "sqlite:///./db.sqlite3"
+
+So:
+
+              FastAPI
+                 ↓
+             SQLAlchemy
+                 ↓
+          Python sqlite3
+                 ↓
+            db.sqlite3
+
+You do not need:
+
+
+—————————————————————————————————————————————————————————————————————
+for which db this driver is required
+
+
+Exactly bro — a separate driver is generally needed when Python/SQLAlchemy has to communicate with a database server that isn't supported by Python's built-in modules.
+Think:
+
+Your FastAPI code
+       ↓
+    SQLAlchemy
+       ↓
+     Driver
+       ↓
+    Database
+
+Common databases
+Database	Driver commonly used with SQLAlchemy	Install separately?
+SQLite	sqlite3	❌ No, built into Python
+PostgreSQL	psycopg	✅ Yes
+MySQL	mysqlclient / PyMySQL	✅ Yes
+MariaDB	mariadb	✅ Yes
+Oracle	oracledb	✅ Yes
+Microsoft SQL Server	pyodbc	✅ Yes
+MongoDB	pymongo	✅ Yes, but MongoDB isn't SQL/SQLAlchemy's normal relational use case
+——————————————————————————————————————————————————————————————————————————————————————————
+
+
+why we use SQLAlchemy in fast api??
+
+
+Bro, the main reason we use SQLAlchemy with FastAPI is that FastAPI itself doesn't provide an ORM/database layer.
+Think about Django first.
+In Django
+Django already gives you:
+
+Django
+  ↓
+Django ORM
+  ↓
+Database
+
+You can write:
+
+Product.objects.all()
+Product.objects.create(...)
+Product.objects.filter(id=1)
+
+You don't need another ORM because Django ORM is built into Django.
+
+In FastAPI
+FastAPI is mainly an API framework:
+
+FastAPI
+   ↓
+??? 
+   ↓
+Database
+
+FastAPI doesn't say:
+"Use this ORM."
+So you choose one.
+A very common choice is:
+
+FastAPI
+   ↓
+SQLAlchemy
+   ↓
+SQLite / PostgreSQL / MySQL
+
+
+What exactly does SQLAlchemy give us?
+1. It gives us an ORM
+Instead of writing raw SQL:
+
+SELECT * FROM products WHERE id = 1;
+
+you can write:
+
+product = db.query(Product).filter(Product.id == 1).first()
+
+Instead of:
+
+INSERT INTO products (name, price)
+VALUES ('iPhone', 70000);
+
+you can do:
+
+product = Product(
+    name="iPhone",
+    price=70000
+)
+
+db.add(product)
+db.commit()
+
+SQLAlchemy translates your Python operations into SQL.
+————————————————————————————————————————————————————————————————————————————————————————
+
+now tell me the schemas and model thing in fast api
+
+Haan bro. Ab Models vs Schemas ko ekdum clearly samajh le. Ye FastAPI mein starting mein sabse confusing part hota hai.
+1. SQLAlchemy Model — Database ke liye
+models/product.py
+
+from sqlalchemy import Column, Integer, String, Float
+from app.database import Base
+
+
+class Product(Base):
+    __tablename__ = "products"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    price = Column(Float, nullable=False)
+    quantity = Column(Integer, nullable=False, default=0)
+
+Ye database table ka blueprint hai.
+Basically:
+
+SQLAlchemy Model
+       ↓
+   Database
+       ↓
+products table
+
+SQLite mein table roughly:
+
+products
+------------------------------------
+id | name | description | price | quantity
+------------------------------------
+1  | iPhone | Apple phone | 70000 | 10
+2  | AirPods | Earbuds | 20000 | 5
+
+So SQLAlchemy model ka concern hai:
+"Database mein data kaise store hoga?"
+
+2. Pydantic Schema — API ke liye
+schemas/product.py
+
+from pydantic import BaseModel
+
+
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    quantity: int
+
+Ye database table nahi banata.
+Ye API ko batata hai:
+"Client se mujhe kis format ka data chahiye?"
+For example client POST karega:
+
+{
+    "name": "iPhone",
+    "description": "Apple phone",
+    "price": 70000,
+    "quantity": 10
+}
+
+Pydantic check karega:
+
+name        → str    ✅
+description → str    ✅
+price       → float  ✅
+quantity    → int    ✅
+
+Agar:
+
+{
+    "name": "iPhone",
+    "price": "hello",
+    "quantity": "abc"
+}
+
+toh validation fail ho jayegi.
+————————————————————————————————————————————————————————————————
+
+ To reflect changes in model if nay change
+
+
+Django ke equivalent ko exactly yaad rakho
+Django:
+
+python manage.py makemigrations
+python manage.py migrate
+
+FastAPI + SQLAlchemy + Alembic:
+
+alembic revision --autogenerate -m "add quantity"
+alembic upgrade head
+
+
+
+
+———————————————fresh creation of model———————————————
+
+
+Base.metadata.create_all(bind=engine)
+
+Ye migration system nahi hai.
+Ye mainly:
+"Agar table exist nahi karta, create kar do."
+Existing table ko safely alter karne ke liye Alembic use karna chahiye.
+
